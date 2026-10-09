@@ -61,7 +61,7 @@ def _nap_bang(san, st):
     return vnf.load(exchange=san, statement=st)
 
 
-def lay_bctc(ma, so_nam=6):
+def lay_bctc_vnf(ma, so_nam=6):
     """Trả về dict {statement: bảng item_name x năm}. Rỗng nếu không có dữ liệu.
     Lý do thiếu dữ liệu được ghi vào LOI (khoá bắt đầu bằng 'bctc')."""
     for k in [k for k in LOI if k.startswith("bctc")]:
@@ -130,3 +130,23 @@ def lay_vnindex(so_ngay=730):
     except Exception as e:
         LOI["vnindex"] = f"Không lấy được VN-Index: {type(e).__name__}: {e}"
         return None
+
+def lay_bctc(ma, so_nam=6):
+    """vnfinancialdata trước, thiếu thì bổ sung từ vnstock."""
+    kq = lay_bctc_vnf(ma, so_nam)
+    if len(kq) >= 2:
+        return kq
+    try:
+        from core.bctc_du_phong import lay_bctc_du_phong
+        bo_sung = lay_bctc_du_phong(ma, so_nam)
+    except Exception as e:
+        LOI["bctc_du_phong"] = f"Nguồn dự phòng vnstock lỗi: {type(e).__name__}: {e}"
+        return kq
+    for k, v in bo_sung.items():
+        kq.setdefault(k, v)
+    if bo_sung:
+        for key in [x for x in LOI if x.startswith("bctc")]:
+            LOI.pop(key)
+    else:
+        LOI["bctc_du_phong"] = f"vnstock cũng không trả BCTC cho mã {ma}."
+    return kq
