@@ -22,10 +22,20 @@ def lay_dong(bang, *ten_chinh_xac):
                 return bang.loc[idx]
     return None
 
+def lay_dong_chinh_xac(bang, *ten):
+    if bang is None or bang.empty:
+        return None
+    for t in ten:
+        for idx in bang.index:
+            if str(idx).strip().lower() == t.lower():
+                return bang.loc[idx]
+    return None
+
 
 def tinh_ty_so(bctc):
     """Tự tính tỷ số từ BCTC. Trả về DataFrame (tỷ số x năm)."""
     bs, is_ = bctc.get("balance_sheet"), bctc.get("income_statement")
+    cf = bctc.get("cash_flow")
     if bs is None or is_ is None:
         return pd.DataFrame()
     ta = lay_dong(bs, "TỔNG TÀI SẢN")
@@ -54,6 +64,30 @@ def tinh_ty_so(bctc):
         kq["Tăng trưởng doanh thu (%)"] = rev.pct_change() * 100
     if npat is not None:
         kq["Tăng trưởng LNST (%)"] = npat.pct_change() * 100
+        phan_vay = [x for x in (lay_dong_chinh_xac(bs, "Vay ngắn hạn"), lay_dong_chinh_xac(bs, "Vay dài hạn")) if x is not None]
+    vay = pd.concat(phan_vay, axis=1).sum(axis=1, min_count=1) if phan_vay else None
+    tien = lay_dong_chinh_xac(bs, "Tiền và tương đương tiền")
+    ebit = lay_dong_chinh_xac(is_, "EBIT")
+    lai_vay = lay_dong_chinh_xac(is_, "Trong đó: Chi phí lãi vay")
+    cfo = lay_dong_chinh_xac(cf, "Lưu chuyển tiền thuần từ các hoạt động sản xuất kinh doanh")
+    co_tuc = lay_dong_chinh_xac(cf, "Cổ tức đã trả")
+
+    if vay is not None and eq is not None:
+        kq["Nợ vay / VCSH (lần)"] = vay / eq
+    if debt is not None and ta is not None:
+        kq["Nợ / Tổng tài sản (%)"] = debt / ta * 100
+    if rev is not None and ta is not None:
+        kq["Vòng quay tài sản (lần)"] = rev / ta
+    if tien is not None and ta is not None:
+        kq["Tiền / Tổng tài sản (%)"] = tien / ta * 100
+    if ta is not None:
+        kq["Tăng trưởng tổng tài sản (%)"] = ta.pct_change() * 100
+    if ebit is not None and lai_vay is not None:
+        kq["EBIT / Lãi vay (lần)"] = ebit / lai_vay.abs().replace(0, float("nan"))
+    if cfo is not None and npat is not None:
+        kq["CFO / LNST (lần)"] = cfo / npat.where(npat > 0)
+    if co_tuc is not None and npat is not None:
+        kq["Chi trả cổ tức / LNST (%)"] = co_tuc.abs() / npat.where(npat > 0) * 100
     return pd.DataFrame(kq).T.sort_index(axis=1)
 
 

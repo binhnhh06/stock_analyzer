@@ -1,4 +1,5 @@
 import pandas as pd
+from functools import lru_cache
 from datetime import datetime, timedelta
 from vnstock import Vnstock
 
@@ -21,6 +22,11 @@ def lay_gia(ma, so_ngay=730):
     return gia
 
 
+@lru_cache(maxsize=8)
+def _nap_bang(san, st):
+    return vnf.load(exchange=san, statement=st)
+
+
 def lay_bctc(ma, so_nam=6):
     """Trả về dict {statement: bảng item_name x năm}. Rỗng nếu không có dữ liệu."""
     kq = {}
@@ -29,7 +35,7 @@ def lay_bctc(ma, so_nam=6):
     for st in STATEMENTS:
         for san in ("HSX", "HNX"):
             try:
-                df = vnf.load(exchange=san, statement=st)
+                df = _nap_bang(san, st)
             except Exception:
                 continue
             d = df[df["ticker"].astype(str).str.upper() == ma]
