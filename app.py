@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from core.data import lay_vnindex, STATEMENTS
+from core.data import lay_vnindex, STATEMENTS, LOI
 from core.pipeline import phan_tich_ma, ngu_canh_tu_ket_qua, quet_nhieu_ma
 from core.strategy import dong_pdf
 from core.report import xuat_pdf
@@ -103,7 +103,8 @@ if r:
     kv = danh_gia(ngu_canh_tu_ket_qua(r), cfg)
     if not bctc:
         st.warning("Chưa có dữ liệu báo cáo tài chính. Điểm cơ bản dùng mức trung tính 50 và các tiêu chí cơ bản bị bỏ qua.")
-
+        for k, v in LOI.items():
+            st.caption(f"⚠ {v}")
 with tabs[0]:
     if not r:
         st.info("Chọn khẩu vị và nhập mã ở thanh bên trái, rồi bấm **Phân tích**.")

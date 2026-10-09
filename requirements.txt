@@ -3,5 +3,14 @@ plotly>=5.20
 pandas>=2.0
 matplotlib>=3.8
 reportlab>=4.0
-vnstock>=3.2
 vnfinancialdata>=0.1.0
+huggingface_hub
+tenacity
+requests
+beautifulsoup4
+openpyxl
+psutil
+pydantic
+pytz
+seaborn
+vnstock_ezchart
