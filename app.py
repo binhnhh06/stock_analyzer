@@ -17,6 +17,25 @@ ap_dung_theme()
 tieu_de_trang()
 st.caption("Dữ liệu: vnstock (giá, VN-Index) · vnfinancialdata (BCTC) · Phân ngành ICB từ vn-annual-report-miner")
 
+import os
+
+
+@st.cache_resource(show_spinner=False)
+def dang_ky_vnstock():
+    try:
+        key = st.secrets.get("VNSTOCK_API_KEY", "")
+    except Exception:
+        key = ""
+    key = key or os.environ.get("VNSTOCK_API_KEY", "")
+    if key:
+        try:
+            from vnstock import register_user
+            register_user(api_key="vnstock_80c9c49d5aa8e6c394a8d502fad4e9bc")
+        except Exception:
+            pass
+
+
+dang_ky_vnstock()
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def vni_cache(so_ngay):

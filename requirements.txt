@@ -1,16 +1,18 @@
+--extra-index-url https://vnstocks.com/api/simple
+vnstock>=4.0.9
+vnai
 streamlit>=1.35
 plotly>=5.20
 pandas>=2.0
 matplotlib>=3.8
 reportlab>=4.0
 vnfinancialdata>=0.1.0
+openpyxl
 huggingface_hub
 tenacity
 requests
 beautifulsoup4
-openpyxl
 psutil
 pydantic
 pytz
 seaborn
-vnstock_ezchart
