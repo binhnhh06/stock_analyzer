@@ -5,5 +5,3 @@ backgroundColor = "#F4EFFF"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#1B1233"
 font = "sans serif"
-
-.streamlit/secrets.toml
