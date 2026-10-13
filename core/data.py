@@ -1,4 +1,5 @@
 import pandas as pd
+import requests
 from functools import lru_cache
 from datetime import datetime, timedelta
 
@@ -127,19 +128,38 @@ def lay_ratio(ma):
         return pd.DataFrame()
 
 
+def _dnse(ma, loai, so_ngay):
+    """Lấy nến ngày từ endpoint biểu đồ công khai của DNSE. loai: 'index' hoặc 'stock'."""
+    den = int(datetime.now().timestamp())
+    tu = int((datetime.now() - timedelta(days=so_ngay)).timestamp())
+    r = requests.get(f"https://services.entrade.com.vn/chart-api/v2/ohlcs/{loai}",
+                     params={"symbol": ma, "resolution": "1D", "from": tu, "to": den}, timeout=20)
+    r.raise_for_status()
+    j = r.json()
+    d = pd.DataFrame({"time": pd.to_datetime(j["t"], unit="s") + pd.Timedelta(hours=7),
+                      "open": j["o"], "high": j["h"], "low": j["l"], "close": j["c"], "volume": j["v"]})
+    d["time"] = d["time"].dt.normalize()
+    return d
+
+
 def lay_vnindex(so_ngay=730):
     try:
-        _can_vnstock()
-        s = Vnstock().stock(symbol="VNINDEX", source="VCI")
-        end = datetime.now().strftime("%Y-%m-%d")
-        start = (datetime.now() - timedelta(days=so_ngay)).strftime("%Y-%m-%d")
-        d = s.quote.history(start=start, end=end, interval="1D")
-        d["time"] = pd.to_datetime(d["time"])
-        LOI.pop("vnindex", None)
-        return d
-    except Exception as e:
-        LOI["vnindex"] = f"Không lấy được VN-Index: {type(e).__name__}: {e}"
-        return None
+        d = _dnse("VNINDEX", "index", so_ngay)
+        if len(d) > 60:
+            return d
+    except BaseException:
+        pass
+    end = datetime.now().strftime("%Y-%m-%d")
+    start = (datetime.now() - timedelta(days=so_ngay)).strftime("%Y-%m-%d")
+    for nguon in ("VCI", "KBS", "TCBS", "MSN"):
+        try:
+            d = Vnstock().stock(symbol="VNINDEX", source=nguon).quote.history(start=start, end=end, interval="1D")
+            if d is not None and len(d) > 60:
+                d["time"] = pd.to_datetime(d["time"])
+                return d
+        except BaseException:
+            continue
+    return None
 
 def lay_bctc(ma, so_nam=6):
     """vnfinancialdata trước, thiếu thì bổ sung từ vnstock."""

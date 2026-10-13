@@ -90,6 +90,13 @@ def tinh_ty_so(bctc):
         kq["Chi trả cổ tức / LNST (%)"] = co_tuc.abs() / npat.where(npat > 0) * 100
     return pd.DataFrame(kq).T.sort_index(axis=1)
 
+    # EPS và giá trị sổ sách/cổ phiếu (đồng), dùng để tự tính P/E, P/B khi nguồn ngoài không có
+    eps = lay_dong_chinh_xac(is_, "Lãi cơ bản trên cổ phiếu")
+    von_gop = lay_dong_chinh_xac(bs, "Cổ phiếu phổ thông")
+    if eps is not None:
+        kq["EPS (đồng)"] = eps
+    if von_gop is not None and eq is not None:
+        kq["BVPS (đồng)"] = eq / (von_gop.where(von_gop > 0) / 10000)  # mệnh giá 10.000 đ/cổ phiếu
 
 def phan_tich(gia, ratio, ty_so):
     gia = gia.copy()
@@ -117,7 +124,16 @@ def phan_tich(gia, ratio, ty_so):
     c = tim_cot(ratio, "p/b") if not ratio.empty else None
     if c is not None:
         kq["P/B"] = float(ratio[c].iloc[0])
-
+    # Nếu nguồn ngoài không có P/E, P/B thì tự tính từ BCTC (giá vnstock tính theo nghìn đồng)
+    gia_dong = kq["Giá đóng cửa"] * (1000 if kq["Giá đóng cửa"] < 1000 else 1)
+    if pe is None and not ty_so.empty and "EPS (đồng)" in ty_so.index:
+        e = ty_so.loc["EPS (đồng)"].dropna()
+        if len(e) and e.iloc[-1] > 0:
+            pe = gia_dong / float(e.iloc[-1]); kq["P/E"] = pe
+    if "P/B" not in kq and not ty_so.empty and "BVPS (đồng)" in ty_so.index:
+        v = ty_so.loc["BVPS (đồng)"].dropna()
+        if len(v) and v.iloc[-1] > 0:
+            kq["P/B"] = gia_dong / float(v.iloc[-1])
     roe = None
     if not ty_so.empty and "ROE (%)" in ty_so.index:
         roe = float(ty_so.loc["ROE (%)"].dropna().iloc[-1]); kq["ROE (%) (từ BCTC)"] = roe
