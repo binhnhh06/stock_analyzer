@@ -46,14 +46,24 @@ def _cot(df, *ung_vien):
     return None
 
 
+NGUON_GIA = ("VCI", "KBS", "TCBS", "MSN")
+
+
 def lay_gia(ma, so_ngay=730):
-    _can_vnstock()
-    s = Vnstock().stock(symbol=ma, source="VCI")
     end = datetime.now().strftime("%Y-%m-%d")
     start = (datetime.now() - timedelta(days=so_ngay)).strftime("%Y-%m-%d")
-    gia = s.quote.history(start=start, end=end, interval="1D")
-    gia["time"] = pd.to_datetime(gia["time"])
-    return gia
+    loi = []
+    for nguon in NGUON_GIA:
+        try:
+            s = Vnstock().stock(symbol=ma, source=nguon)
+            gia = s.quote.history(start=start, end=end, interval="1D")
+            if gia is not None and len(gia) > 60:
+                gia["time"] = pd.to_datetime(gia["time"])
+                return gia
+            loi.append(f"{nguon}: ít dữ liệu")
+        except BaseException as e:
+            loi.append(f"{nguon}: {str(e)[:60]}")
+    raise RuntimeError("Mọi nguồn giá đều lỗi (" + " | ".join(loi) + ")")
 
 
 @lru_cache(maxsize=8)
