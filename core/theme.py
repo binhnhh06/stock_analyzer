@@ -10,8 +10,8 @@ DAY_MAU = [MAU["tim"], MAU["hong"], MAU["cyan"], MAU["cam"], MAU["lime"], MAU["v
 
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
-.stApp, .stApp p, .stApp label, .stApp li, .stApp input, .stApp textarea, .stApp button, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp [data-testid="stMarkdownContainer"] {font-family:'Be Vietnam Pro',system-ui,sans-serif;}
-[data-testid="stIconMaterial"], span.material-icons, span.material-symbols-rounded {font-family:'Material Symbols Rounded','Material Icons' !important;}
+html, body, .stApp, .stApp p, .stApp label, .stApp li, .stApp input, .stApp textarea, .stApp select, .stApp button, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp td, .stApp th {font-family:'Be Vietnam Pro',system-ui,sans-serif;}
+[data-testid="stIconMaterial"], span.material-icons, span.material-symbols-rounded, span.material-symbols-outlined {font-family:"Material Symbols Rounded","Material Symbols Outlined"!important;}
 .stApp{background:#F4EFFF;color:#1B1233}
 .block-container{padding-top:1.2rem;max-width:1280px}
 header[data-testid="stHeader"]{background:transparent}
@@ -72,9 +72,9 @@ def theme_plotly(fig, cao=None):
     return fig
 
 
-def tieu_de_trang(tieu_de="X10 Investment Lab", phu_de="Phân tích cổ phiếu Việt Nam theo khẩu vị của bạn"):
+def tieu_de_trang(tieu_de="BatDayStox", phu_de="Phân tích cổ phiếu Việt Nam theo khẩu vị của bạn"):
     st.markdown(
-        f'<div class="x10-hero"><div class="x10-logo">X10</div><div><div class="x10-title">{tieu_de}</div>'
+        f'<div class="x10-hero"><div class="x10-logo">BDS</div><div><div class="x10-title">{tieu_de}</div>'
         f'<div class="x10-sub">{phu_de}</div></div></div>', unsafe_allow_html=True)
 
 

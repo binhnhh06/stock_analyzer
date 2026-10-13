@@ -68,13 +68,13 @@ def _ve_trang(canvas, doc, ma):
         for i, m in enumerate([HONG, LIME, CYAN, VANG]):
             canvas.setFillColor(colors.HexColor(m)); canvas.rect(w - (4 - i) * 1.1 * cm, h - 4.2 * cm, 1.1 * cm, 0.45 * cm, stroke=0, fill=1)
         canvas.setFillColor(colors.HexColor(LIME)); canvas.setFont("VN-B", 10)
-        canvas.drawString(2 * cm, h - 1.5 * cm, "X10 INVESTMENT LAB · BÁO CÁO PHÂN TÍCH CỔ PHIẾU")
+        canvas.drawString(2 * cm, h - 1.5 * cm, "BATDAYSTOX · BÁO CÁO PHÂN TÍCH CỔ PHIẾU")
         canvas.setFillColor(colors.white); canvas.setFont("VN-B", 34); canvas.drawString(2 * cm, h - 3.1 * cm, ma)
         canvas.setFont("VN", 10); canvas.drawRightString(w - 2 * cm, h - 1.5 * cm, f"Ngày lập {datetime.now():%d/%m/%Y}")
     else:
         canvas.setFillColor(colors.HexColor(TIM)); canvas.rect(0, h - 1.2 * cm, w, 1.2 * cm, stroke=0, fill=1)
         canvas.setFillColor(colors.white); canvas.setFont("VN-B", 10)
-        canvas.drawString(2 * cm, h - 0.8 * cm, f"{ma} · X10 Investment Lab")
+        canvas.drawString(2 * cm, h - 0.8 * cm, f"{ma} · BatDayStox")
     canvas.setStrokeColor(colors.HexColor("#DCCFFB")); canvas.line(2 * cm, 1.5 * cm, w - 2 * cm, 1.5 * cm)
     canvas.setFillColor(colors.HexColor(XAM)); canvas.setFont("VN", 7.5)
     canvas.drawString(2 * cm, 1.0 * cm, "Báo cáo tự động, chỉ mang tính tham khảo, không phải lời khuyên đầu tư.")

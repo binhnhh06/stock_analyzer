@@ -2,7 +2,8 @@ import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from core.data import lay_vnindex, STATEMENTS, LOI
-from core.pipeline import phan_tich_ma, ngu_canh_tu_ket_qua, quet_nhieu_ma
+from core.pipeline import phan_tich_ma, ngu_canh_tu_ket_qua, quet_nhieu_ma, phan_tich_lai_voi_bctc
+from core.bctc_user import mau_excel, doc_bctc
 from core.strategy import dong_pdf
 from core.report import xuat_pdf
 from core.profiles import TIEU_CHI, NHOM, KHAU_VI, cau_hinh_khau_vi, danh_gia, tom_tat
@@ -11,7 +12,7 @@ from core.dinhdang import so_vn
 from core.theme import (ap_dung_theme, theme_plotly, tieu_de_trang, huong_dan_3_buoc, the_tin_hieu,
                         dong_tieu_chi, tag_trang_thai, thanh_phan_tram, MAU)
 
-st.set_page_config(page_title="X10 Investment Lab", page_icon="📈", layout="wide")
+st.set_page_config(page_title="BatDayStox", page_icon="📈", layout="wide")
 ap_dung_theme()
 tieu_de_trang()
 st.caption("Dữ liệu: vnstock (giá, VN-Index) · vnfinancialdata (BCTC) · Phân ngành ICB từ vn-annual-report-miner")
@@ -74,6 +75,10 @@ with st.sidebar:
     ma = st.text_input("Mã cổ phiếu", "FPT").upper().strip()
     so_ngay = st.slider("Khoảng thời gian giá (ngày)", 365, 1825, 730, step=30)
     so_nam = st.slider("Số năm BCTC", 3, 10, 6)
+    st.header("3. BCTC của bạn (tuỳ chọn)")
+    st.caption("Không có BCTC tự động? Tải file mẫu, điền số (đơn vị: tỷ đồng) rồi tải lên.")
+    st.download_button("Tải file Excel mẫu", mau_excel(), "mau_bctc_cashgo.xlsx", use_container_width=True)
+    file_bctc = st.file_uploader("Tải BCTC của bạn (.xlsx hoặc .csv)", type=["xlsx", "csv"])
     st.subheader("Hiển thị biểu đồ")
     hien_ma = st.multiselect("Đường trung bình", ["MA20", "MA50"], default=["MA20", "MA50"])
     hien_rsi = st.checkbox("Hiện RSI", True)
@@ -92,6 +97,19 @@ if chay:
         st.error(f"Không lấy được dữ liệu cho mã {ma}: {e}")
 
 r = st.session_state.get("r")
+if file_bctc is not None:
+    try:
+        bctc_user = doc_bctc(file_bctc)
+        if not bctc_user:
+            st.error("Không đọc được BCTC. Hãy dùng đúng file Excel mẫu (tên sheet và cột năm giữ nguyên).")
+        elif r:
+            r = phan_tich_lai_voi_bctc(r, bctc_user)
+            st.session_state.pop("pdf", None)
+            st.success("Đang phân tích bằng BCTC do bạn cung cấp (thay cho dữ liệu tự động).")
+        else:
+            st.info("Đã đọc BCTC. Bấm Phân tích để chấm điểm.")
+    except Exception as e:
+        st.error(f"Lỗi đọc file BCTC: {e}")
 cfg = cau_hinh_hien_tai()
 ten_kv = KHAU_VI[st.session_state["kv"]]["ten"]
 tabs = st.tabs(["Tổng quan", "Hợp khẩu vị", "Kỹ thuật", "Báo cáo tài chính", "Tỷ số tài chính", "Quét thị trường"])
