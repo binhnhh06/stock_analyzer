@@ -6,6 +6,7 @@ from core.pipeline import phan_tich_ma, ngu_canh_tu_ket_qua, quet_nhieu_ma, phan
 from core.bctc_user import mau_excel, doc_bctc
 from core.strategy import dong_pdf
 from core.report import xuat_pdf
+from core.hoso import ve_tab_hoso
 from core.profiles import TIEU_CHI, NHOM, KHAU_VI, cau_hinh_khau_vi, danh_gia, tom_tat
 from core import industry
 from core.dinhdang import so_vn
@@ -15,8 +16,7 @@ from core.theme import (ap_dung_theme, theme_plotly, tieu_de_trang, huong_dan_3_
 st.set_page_config(page_title="BatDayStox", page_icon="📈", layout="wide")
 ap_dung_theme()
 tieu_de_trang()
-st.caption("Dữ liệu: vnstock (giá, VN-Index) · vnfinancialdata (BCTC) · Phân ngành ICB từ vn-annual-report-miner")
-
+st.caption("Bộ lọc giúp bạn tìm ứng viên để nghiên cứu, không phải khuyến nghị đầu tư. Hãy sang tab Hiểu doanh nghiệp trước khi quyết định.")
 import os
 
 
@@ -131,7 +131,15 @@ if file_bctc is not None:
         st.error(f"Lỗi đọc file BCTC: {e}")
 cfg = cau_hinh_hien_tai()
 ten_kv = KHAU_VI[st.session_state["kv"]]["ten"]
-tabs = st.tabs(["Tổng quan", "Hợp khẩu vị", "Kỹ thuật", "Báo cáo tài chính", "Tỷ số tài chính", "Quét thị trường"])
+tabs = st.tabs([
+    "Tổng quan", 
+    "Hợp khẩu vị", 
+    "Kỹ thuật", 
+    "Báo cáo tài chính", 
+    "Tỷ số tài chính", 
+    "Quét thị trường", 
+    "Hiểu doanh nghiệp"
+])
 
 if r:
     ma, bctc, ty_so, gia, kq, xep = r["ma"], r["bctc"], r["ty_so"], r["gia"], r["kq"], r["xep"]
@@ -284,3 +292,9 @@ with tabs[5]:
         st.dataframe(df, hide_index=True, use_container_width=True,
                      column_config={"% hợp khẩu vị": st.column_config.ProgressColumn("% hợp khẩu vị", min_value=0, max_value=100, format="%d%%")})
         st.download_button("Tải kết quả CSV", df.to_csv(index=False).encode("utf-8-sig"), "quet_khau_vi.csv", "text/csv")
+
+        
+
+# ---------------------------------------------------------------- Hiểu doanh nghiệp
+with tabs[6]:
+    ve_tab_hoso(r)

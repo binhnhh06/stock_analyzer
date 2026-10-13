@@ -7,7 +7,19 @@ MAU = {
     "xanh_la": "#078A4F", "chu_mo": "#6B6389", "vien": "#DCCFFB",
 }
 DAY_MAU = [MAU["tim"], MAU["hong"], MAU["cyan"], MAU["cam"], MAU["lime"], MAU["vang"]]
-
+PASTEL = {
+    "tim": MAU["tim"],
+    "hong": MAU["hong"],
+    "cyan": MAU["cyan"],
+    "vang": MAU["vang"],
+    "lime": MAU["lime"],
+    "cam": MAU["cam"],
+    "do": MAU["do"],
+    "xanh_la": MAU["xanh_la"],
+    "trang": MAU["trang"],
+    "nen": MAU["nen"],
+    "muc": MAU["muc"],
+}
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 html, body, .stApp, .stApp p, .stApp label, .stApp li, .stApp input, .stApp textarea, .stApp select, .stApp button, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp td, .stApp th {font-family:'Be Vietnam Pro',system-ui,sans-serif;}
