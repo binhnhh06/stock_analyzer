@@ -22,6 +22,7 @@ def lay_dong(bang, *ten_chinh_xac):
                 return bang.loc[idx]
     return None
 
+
 def lay_dong_chinh_xac(bang, *ten):
     if bang is None or bang.empty:
         return None
@@ -32,12 +33,31 @@ def lay_dong_chinh_xac(bang, *ten):
     return None
 
 
+def lay_dong_co_tuc(cf):
+    """Dòng cổ tức đã TRẢ trong báo cáo lưu chuyển tiền tệ (không lấy dòng cổ tức nhận được)."""
+    if cf is None or cf.empty:
+        return None
+    dong = lay_dong_chinh_xac(cf, "Cổ tức đã trả", "Cổ tức, lợi nhuận đã trả cho chủ sở hữu",
+                              "Cổ tức và lợi nhuận đã trả")
+    if dong is not None:
+        return dong
+    loai = ("nhận", "thu", "được chia", "thiểu số")
+    for idx in cf.index:
+        t = str(idx).lower()
+        if any(k in t for k in loai):
+            continue
+        if ("cổ tức" in t and "trả" in t) or ("lợi nhuận" in t and "trả" in t and "chủ sở hữu" in t):
+            return cf.loc[idx]
+    return None
+
+
 def tinh_ty_so(bctc):
     """Tự tính tỷ số từ BCTC. Trả về DataFrame (tỷ số x năm)."""
     bs, is_ = bctc.get("balance_sheet"), bctc.get("income_statement")
     cf = bctc.get("cash_flow")
     if bs is None or is_ is None:
         return pd.DataFrame()
+
     ta = lay_dong(bs, "TỔNG TÀI SẢN")
     eq = lay_dong(bs, "VỐN CHỦ SỞ HỮU")
     debt = lay_dong(bs, "NỢ PHẢI TRẢ")
@@ -64,13 +84,14 @@ def tinh_ty_so(bctc):
         kq["Tăng trưởng doanh thu (%)"] = rev.pct_change() * 100
     if npat is not None:
         kq["Tăng trưởng LNST (%)"] = npat.pct_change() * 100
-        phan_vay = [x for x in (lay_dong_chinh_xac(bs, "Vay ngắn hạn"), lay_dong_chinh_xac(bs, "Vay dài hạn")) if x is not None]
+
+    phan_vay = [x for x in (lay_dong_chinh_xac(bs, "Vay ngắn hạn"), lay_dong_chinh_xac(bs, "Vay dài hạn")) if x is not None]
     vay = pd.concat(phan_vay, axis=1).sum(axis=1, min_count=1) if phan_vay else None
     tien = lay_dong_chinh_xac(bs, "Tiền và tương đương tiền")
     ebit = lay_dong_chinh_xac(is_, "EBIT")
     lai_vay = lay_dong_chinh_xac(is_, "Trong đó: Chi phí lãi vay")
     cfo = lay_dong_chinh_xac(cf, "Lưu chuyển tiền thuần từ các hoạt động sản xuất kinh doanh")
-    co_tuc = lay_dong_chinh_xac(cf, "Cổ tức đã trả")
+    co_tuc = lay_dong_co_tuc(cf)
 
     if vay is not None and eq is not None:
         kq["Nợ vay / VCSH (lần)"] = vay / eq
@@ -88,15 +109,19 @@ def tinh_ty_so(bctc):
         kq["CFO / LNST (lần)"] = cfo / npat.where(npat > 0)
     if co_tuc is not None and npat is not None:
         kq["Chi trả cổ tức / LNST (%)"] = co_tuc.abs() / npat.where(npat > 0) * 100
-    return pd.DataFrame(kq).T.sort_index(axis=1)
 
-    # EPS và giá trị sổ sách/cổ phiếu (đồng), dùng để tự tính P/E, P/B khi nguồn ngoài không có
+    # EPS và giá trị sổ sách/cổ phiếu (đồng), dùng để tự tính P/E, P/B từ giá hiện tại
     eps = lay_dong_chinh_xac(is_, "Lãi cơ bản trên cổ phiếu")
-    von_gop = lay_dong_chinh_xac(bs, "Cổ phiếu phổ thông")
+    if eps is None:
+        eps = lay_dong(is_, "Lãi cơ bản trên cổ phiếu")
+    von_gop = lay_dong_chinh_xac(bs, "Cổ phiếu phổ thông", "Vốn góp của chủ sở hữu", "Vốn đầu tư của chủ sở hữu")
     if eps is not None:
         kq["EPS (đồng)"] = eps
     if von_gop is not None and eq is not None:
         kq["BVPS (đồng)"] = eq / (von_gop.where(von_gop > 0) / 10000)  # mệnh giá 10.000 đ/cổ phiếu
+
+    return pd.DataFrame(kq).T.sort_index(axis=1)
+
 
 def phan_tich(gia, ratio, ty_so):
     gia = gia.copy()
@@ -105,7 +130,6 @@ def phan_tich(gia, ratio, ty_so):
     d = gia["close"].diff()
     rs = d.clip(lower=0).rolling(14).mean() / (-d.clip(upper=0)).rolling(14).mean()
     gia["RSI"] = 100 - 100 / (1 + rs)
-
     last = gia.iloc[-1]
     n = min(126, len(gia) - 1)
     kq = {
@@ -117,23 +141,22 @@ def phan_tich(gia, ratio, ty_so):
         "Biến động năm (%)": float(gia["close"].pct_change().std() * (252 ** 0.5) * 100),
     }
 
-    pe = None
-    c = tim_cot(ratio, "p/e") if not ratio.empty else None
-    if c is not None:
-        pe = float(ratio[c].iloc[0]); kq["P/E"] = pe
-    c = tim_cot(ratio, "p/b") if not ratio.empty else None
-    if c is not None:
-        kq["P/B"] = float(ratio[c].iloc[0])
-    # Nếu nguồn ngoài không có P/E, P/B thì tự tính từ BCTC (giá vnstock tính theo nghìn đồng)
+    # P/E, P/B tự tính từ giá hiện tại và BCTC (không dùng bảng ratio vì dữ liệu có thể cũ)
+    # Giá vnstock tính theo nghìn đồng
     gia_dong = kq["Giá đóng cửa"] * (1000 if kq["Giá đóng cửa"] < 1000 else 1)
-    if pe is None and not ty_so.empty and "EPS (đồng)" in ty_so.index:
+    pe = None
+    if not ty_so.empty and "EPS (đồng)" in ty_so.index:
         e = ty_so.loc["EPS (đồng)"].dropna()
         if len(e) and e.iloc[-1] > 0:
-            pe = gia_dong / float(e.iloc[-1]); kq["P/E"] = pe
-    if "P/B" not in kq and not ty_so.empty and "BVPS (đồng)" in ty_so.index:
+            pe = gia_dong / float(e.iloc[-1])
+            kq["P/E"] = pe
+    if not ty_so.empty and "BVPS (đồng)" in ty_so.index:
         v = ty_so.loc["BVPS (đồng)"].dropna()
         if len(v) and v.iloc[-1] > 0:
-            kq["P/B"] = gia_dong / float(v.iloc[-1])
+            pb = gia_dong / float(v.iloc[-1])
+            if 0.05 <= pb <= 100:  # loại kết quả vô lý do sai đơn vị
+                kq["P/B"] = pb
+
     roe = None
     if not ty_so.empty and "ROE (%)" in ty_so.index:
         roe = float(ty_so.loc["ROE (%)"].dropna().iloc[-1]); kq["ROE (%) (từ BCTC)"] = roe
@@ -150,7 +173,6 @@ def phan_tich(gia, ratio, ty_so):
         diem += 1; ly_do.append("RSI trong vùng cân bằng (30-70)")
     if kq["Lợi suất 6 tháng (%)"] > 0:
         diem += 1; ly_do.append("Lợi suất 6 tháng dương")
-
     if roe is not None:
         toi_da += 1
         if roe >= 15:

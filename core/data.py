@@ -217,3 +217,28 @@ def lay_lich_su_co_tuc(ma):
 def lay_lich_su_su_kien(ma):
     """Lấy sự kiện quyền và lịch sử chia cổ tức."""
     return lay_lich_su_co_tuc(ma)
+
+def lay_so_cp(ma):
+    """Số cổ phiếu lưu hành từ vnstock company overview. Trả None nếu không lấy được."""
+    try:
+        _can_vnstock()
+    except Exception as e:
+        LOI["so_cp"] = str(e)
+        return None
+    for nguon in ("VCI", "TCBS"):
+        try:
+            ov = Vnstock().stock(symbol=ma, source=nguon).company.overview()
+            if ov is None or ov.empty:
+                continue
+            ung_vien = ("issue_share", "outstanding_share", "shares_outstanding", "listed_share")
+            cot = next((c for c in ov.columns if str(c).lower() in ung_vien), None)
+            if cot is None:
+                cot = next((c for c in ov.columns if "share" in str(c).lower() and "ratio" not in str(c).lower()), None)
+            if cot is None:
+                continue
+            v = pd.to_numeric(ov[cot].iloc[0], errors="coerce")
+            if pd.notna(v) and v > 0:
+                return float(v)
+        except BaseException as e:
+            LOI[f"so_cp:{nguon}"] = f"{type(e).__name__}: {str(e)[:80]}"
+    return None
