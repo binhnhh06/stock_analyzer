@@ -180,3 +180,40 @@ def lay_bctc(ma, so_nam=6):
     else:
         LOI["bctc_du_phong"] = f"vnstock cũng không trả BCTC cho mã {ma}."
     return kq
+
+def lay_lich_su_co_tuc(ma):
+    """Lấy lịch sử chi trả cổ tức và sự kiện qua vnstock."""
+    try:
+        _can_vnstock()
+        # Thử gọi qua hàm tiện ích hoặc module stock/company của vnstock
+        from vnstock import Vnstock
+        
+        # Thử lấy dữ liệu sự kiện/cổ tức bằng các phương thức tiêu chuẩn của vnstock
+        for source in ("TCBS", "VCI"):
+            try:
+                # Khởi tạo đối tượng cổ phiếu
+                stock = Vnstock().stock(symbol=ma, source=source)
+                
+                # Kiểm tra nếu có module company / corporate / finance hỗ trợ
+                if hasattr(stock, "company"):
+                    # Một số phiên bản hỗ trợ lấy sự kiện hoặc cổ tức trực tiếp
+                    if hasattr(stock.company, "dividends"):
+                        df = stock.company.dividends()
+                        if df is not None and not df.empty:
+                            return df
+                if hasattr(stock, "corporate"):
+                    if hasattr(stock.corporate, "dividends"):
+                        df = stock.corporate.dividends()
+                        if df is not None and not df.empty:
+                            return df
+            except Exception:
+                continue
+                
+    except Exception as e:
+        LOI[f"co_tuc_{ma}"] = f"Không lấy được lịch sử cổ tức: {e}"
+        
+    return pd.DataFrame()
+
+def lay_lich_su_su_kien(ma):
+    """Lấy sự kiện quyền và lịch sử chia cổ tức."""
+    return lay_lich_su_co_tuc(ma)

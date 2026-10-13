@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -138,7 +140,8 @@ tabs = st.tabs([
     "Báo cáo tài chính", 
     "Tỷ số tài chính", 
     "Quét thị trường", 
-    "Hiểu doanh nghiệp"
+    "Vĩ mô & Chính sách",      # <--- Thêm tab mới ở đây
+    "Hiểu doanh nghiệp"         # Tab hồ sơ & luận điểm đầu tư
 ])
 
 if r:
@@ -297,4 +300,38 @@ with tabs[5]:
 
 # ---------------------------------------------------------------- Hiểu doanh nghiệp
 with tabs[6]:
+    st.subheader("🌐 Bản đồ Vĩ mô & Động lực Ngành (Catalysts & Policies)")
+    st.caption("Cập nhật các yếu tố hướng tới tương lai (forward-looking) thay vì chỉ nhìn vào dữ liệu quá khứ.")
+    
+    if not r:
+        st.info("Vui lòng chọn mã và bấm **Phân tích** ở thanh bên trái để xem thông tin vĩ mô liên quan.")
+    else:
+        ma = r["ma"]
+        thong_tin = industry.thong_tin(ma)
+        icb2 = thong_tin.get("icb2", "Ngành chung")
+        
+        st.markdown(f"""
+        <div class='x10-card'>
+            <h4>Tác động vĩ mô đối với nhóm ngành: <b>{icb2}</b></h4>
+            <p>Để đánh giá đúng điểm rơi lợi nhuận của doanh nghiệp, bạn cần trả lời các câu hỏi vĩ mô cốt lõi sau:</p>
+            <ul>
+                <b>1. Chính sách tiền tệ & Lãi suất:</b> Lãi suất cho vay hiện tại đang hỗ trợ hay gây áp lực lên chi phí tài chính của ngành?<br>
+                <b>2. Đầu tư công & Chính sách pháp lý:</b> Có gói kích thích, luật mới hoặc quy định tháo gỡ khó khăn nào trực tiếp tác động đến các dự án của doanh nghiệp không?<br>
+                <b>3. Giá nguyên vật liệu đầu vào & Tỷ giá:</b> Biến động giá hàng hóa thế giới hoặc tỷ giá ngoại tệ tác động ra sao tới biên lợi nhuận gộp?
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.subheader("📰 Nhật ký Sự kiện & Tin tức Trọng yếu")
+        st.markdown(f"Truy cập nhanh các nguồn tin tức thời gian thực và sự kiện quan trọng (ĐHĐCĐ, chốt cổ tức, giao dịch lớn) của mã **{ma}**:")
+        
+        q_encoded = quote(f"{ma} cổ phiếu sự kiện cổ tức đại hội")
+        q_policy = quote(f"{icb2} chính sách vĩ mô 2026")
+        
+        st.markdown(f"""
+        - [🔍 Tra cứu tin tức & sự kiện thời gian thực của {ma} trên Google News](https://news.google.com/search?q={q_encoded}&hl=vi&gl=VN&ceid=VN:vi)
+        - [📈 Theo dõi chính sách và xu hướng ngành {icb2}](https://news.google.com/search?q={q_policy}&hl=vi&gl=VN&ceid=VN:vi)
+        """)
+
+with tabs[7]:
     ve_tab_hoso(r)
